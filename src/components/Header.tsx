@@ -36,7 +36,7 @@ const Header: React.FC = () => {
             </Link>
           </Button>
           
-          {comparisonList.length > 0 && (
+          {(
             <Button 
               variant={location.pathname === '/compare' ? 'secondary' : 'ghost'}
               size="sm"

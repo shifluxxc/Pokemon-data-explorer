@@ -1,56 +1,78 @@
-
 import React from 'react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent,
-  DropdownMenuItem, 
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel
-} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-interface SortControlProps {
-  sortBy: 'id' | 'name';
-  sortOrder: 'asc' | 'desc';
-  onSortChange: (sortBy: 'id' | 'name', sortOrder: 'asc' | 'desc') => void;
+interface TypeFilterMultiProps {
+  selectedTypes: string[];
+  types: string[];
+  onTypeToggle: (type: string) => void;
+  onClearTypes: () => void;
 }
 
-const SortControl: React.FC<SortControlProps> = ({ sortBy, sortOrder, onSortChange }) => {
+const TypeFilterMulti: React.FC<TypeFilterMultiProps> = ({ 
+  selectedTypes, 
+  types, 
+  onTypeToggle,
+  onClearTypes
+}) => {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full bg-white dark:bg-gray-800 border-2 border-pokedex-mediumGray dark:border-gray-700">
-          Sort: {sortBy === 'id' ? 'ID' : 'Name'} ({sortOrder === 'asc' ? 'A-Z' : 'Z-A'})
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800">
-        <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup 
-          value={sortBy} 
-          onValueChange={(value) => onSortChange(value as 'id' | 'name', sortOrder)}
-        >
-          <DropdownMenuRadioItem value="id">ID Number</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Order</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuRadioGroup 
-          value={sortOrder}
-          onValueChange={(value) => onSortChange(sortBy, value as 'asc' | 'desc')}
-        >
-          <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="w-full space-y-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-full bg-white dark:bg-gray-800 border-2 border-pokedex-mediumGray dark:border-gray-700">
+            Filter by Types
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800">
+          <DropdownMenuLabel>Pokemon Types</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {types.map((type) => (
+            <DropdownMenuCheckboxItem
+              key={type}
+              checked={selectedTypes.includes(type)}
+              onCheckedChange={() => onTypeToggle(type)}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      {selectedTypes.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selectedTypes.map(type => (
+            <Badge 
+              key={type} 
+              variant="secondary" 
+              className="capitalize flex items-center gap-1 cursor-pointer"
+              onClick={() => onTypeToggle(type)}
+            >
+              {type}
+              <X className="h-3 w-3" />
+            </Badge>
+          ))}
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClearTypes} 
+            className="text-xs"
+          >
+            Clear All
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default SortControl;
+export default TypeFilterMulti;
