@@ -1,7 +1,4 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { getPokemonList } from '@/services/pokemonService';
-import { PokemonWithDetails } from '@/types/pokemon';
+import { useAllPokemon } from '@/services/pokemonService';
 import { useMemo } from 'react';
 
 interface UsePokemonOptions {
@@ -18,16 +15,13 @@ export const usePokemon = ({
   searchTerm = '' 
 }: Partial<UsePokemonOptions> = {}) => {
   
-  // Fetch all Pokémon
+  // Fetch all Pokémon using React Query
   const { 
     data: allPokemon = [], 
     isLoading, 
     error,
     refetch 
-  } = useQuery({
-    queryKey: ['allPokemon'],
-    queryFn: () => getPokemonList(150),
-  });
+  } = useAllPokemon(150);
   
   // Filter and sort Pokémon
   const filteredPokemon = useMemo(() => {

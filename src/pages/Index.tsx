@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import SearchBar from '@/components/SearchBar';
@@ -6,21 +5,25 @@ import TypeFilter from '@/components/TypeFilter';
 import PokemonList from '@/components/PokemonList';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorDisplay from '@/components/ErrorDisplay';
-import { PokemonWithDetails } from '@/types/pokemon';
-import { getPokemonList, getAllPokemonTypes } from '@/services/pokemonService';
+import { useAllPokemon, getAllPokemonTypes } from '@/services/pokemonService';
 import { useToast } from "@/components/ui/use-toast";
 import { usePagination } from '@/hooks/usePagination';
 
 const Index = () => {
-  const [allPokemon, setAllPokemon] = useState<PokemonWithDetails[]>([]);
-  const [filteredPokemon, setFilteredPokemon] = useState<PokemonWithDetails[]>([]);
+  const [filteredPokemon, setFilteredPokemon] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
-  const [types, setTypes] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [types, setTypes] = useState([]);
   const { toast } = useToast();
 
+  // Use React Query for fetching data
+  const { 
+    data: allPokemon = [], 
+    isLoading, 
+    error, 
+    refetch 
+  } = useAllPokemon(150);
+  
   // Add pagination for filtered Pokémon
   const {
     currentPage,
@@ -33,45 +36,21 @@ const Index = () => {
     itemsPerPage: 12
   });
 
-  // Function to fetch all Pokémon
-  const fetchPokemonData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const pokemonData = await getPokemonList(150);
-      setAllPokemon(pokemonData);
-      setFilteredPokemon(pokemonData);
-      
-      // Extract all types from the fetched Pokémon
-      const allTypes = getAllPokemonTypes(pokemonData);
+  // Update types when data is loaded
+  useEffect(() => {
+    if (allPokemon.length > 0) {
+      const allTypes = getAllPokemonTypes(allPokemon);
       setTypes(allTypes);
       
       toast({
         title: "Data loaded successfully",
-        description: `Loaded ${pokemonData.length} Pokémon`,
+        description: `Loaded ${allPokemon.length} Pokémon`,
         duration: 3000,
       });
-    } catch (err) {
-      console.error("Error fetching Pokémon:", err);
-      setError("Failed to load Pokémon data. Please check your connection and try again.");
-      toast({
-        variant: "destructive",
-        title: "Error loading data",
-        description: "Failed to fetch Pokémon from the API",
-        duration: 5000,
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [allPokemon, toast]);
 
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchPokemonData();
-  }, []);
-
-  // Apply filters when search term or selected type changes
+  // Apply filters when search term, selected type, or data changes
   useEffect(() => {
     if (allPokemon.length === 0) return;
     
@@ -97,18 +76,18 @@ const Index = () => {
   }, [searchTerm, selectedType, allPokemon]);
 
   // Handle search input change
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = (value) => {
     setSearchTerm(value);
     goToPage(1); // Reset to first page on search
   };
   
   // Handle type filter change
-  const handleTypeChange = (type: string) => {
+  const handleTypeChange = (type) => {
     setSelectedType(type);
     goToPage(1); // Reset to first page on filter change
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
@@ -124,7 +103,10 @@ const Index = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <main className="container py-6">
-          <ErrorDisplay message={error} onRetry={fetchPokemonData} />
+          <ErrorDisplay 
+            message={error instanceof Error ? error.message : "Unknown error"} 
+            onRetry={refetch} 
+          />
         </main>
       </div>
     );

@@ -1,9 +1,10 @@
-
 import { PokemonDetail, PokemonListResponse, PokemonWithDetails, PokemonEvolution, Species } from "@/types/pokemon";
+import { useQuery } from "@tanstack/react-query";
 
 const BASE_URL = "https://pokeapi.co/api/v2";
 
-export async function getPokemonList(limit: number = 150): Promise<PokemonWithDetails[]> {
+// Fetch functions
+const fetchPokemonList = async (limit: number = 150): Promise<PokemonWithDetails[]> => {
   try {
     const response = await fetch(`${BASE_URL}/pokemon?limit=${limit}`);
     if (!response.ok) {
@@ -13,7 +14,7 @@ export async function getPokemonList(limit: number = 150): Promise<PokemonWithDe
     const data: PokemonListResponse = await response.json();
     
     // Fetch details for each Pokémon
-    const pokemonPromises = data.results.map(pokemon => getPokemonDetails(pokemon.name));
+    const pokemonPromises = data.results.map(pokemon => fetchPokemonDetails(pokemon.name));
     const pokemonDetails = await Promise.all(pokemonPromises);
     
     return pokemonDetails;
@@ -21,9 +22,9 @@ export async function getPokemonList(limit: number = 150): Promise<PokemonWithDe
     console.error("Error fetching Pokémon list:", error);
     throw error;
   }
-}
+};
 
-export async function getPokemonDetails(nameOrId: string | number): Promise<PokemonWithDetails> {
+const fetchPokemonDetails = async (nameOrId: string | number): Promise<PokemonWithDetails> => {
   try {
     const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}`);
     if (!response.ok) {
@@ -49,9 +50,9 @@ export async function getPokemonDetails(nameOrId: string | number): Promise<Poke
     console.error(`Error fetching Pokémon details for ${nameOrId}:`, error);
     throw error;
   }
-}
+};
 
-export async function getSpeciesDetails(url: string): Promise<Species> {
+const fetchSpeciesDetails = async (url: string): Promise<Species> => {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -62,9 +63,9 @@ export async function getSpeciesDetails(url: string): Promise<Species> {
     console.error(`Error fetching species details:`, error);
     throw error;
   }
-}
+};
 
-export async function getEvolutionChain(url: string): Promise<PokemonEvolution> {
+const fetchEvolutionChain = async (url: string): Promise<PokemonEvolution> => {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -75,8 +76,41 @@ export async function getEvolutionChain(url: string): Promise<PokemonEvolution> 
     console.error(`Error fetching evolution chain:`, error);
     throw error;
   }
-}
+};
 
+// React Query hooks
+export const useAllPokemon = (limit: number = 150) => {
+  return useQuery({
+    queryKey: ['allPokemon', limit],
+    queryFn: () => fetchPokemonList(limit),
+  });
+};
+
+export const usePokemonDetails = (nameOrId: string | number) => {
+  return useQuery({
+    queryKey: ['pokemon', nameOrId],
+    queryFn: () => fetchPokemonDetails(nameOrId),
+    enabled: !!nameOrId,
+  });
+};
+
+export const useSpeciesDetails = (url: string | undefined) => {
+  return useQuery({
+    queryKey: ['species', url],
+    queryFn: () => fetchSpeciesDetails(url || ''),
+    enabled: !!url,
+  });
+};
+
+export const useEvolutionChain = (url: string | undefined) => {
+  return useQuery({
+    queryKey: ['evolution', url],
+    queryFn: () => fetchEvolutionChain(url || ''),
+    enabled: !!url,
+  });
+};
+
+// Helper functions that don't require React Query
 export function getAllPokemonTypes(pokemonList: PokemonWithDetails[]): string[] {
   // Extract all types and remove duplicates
   const typesSet = new Set<string>();
@@ -117,3 +151,9 @@ export function processEvolutionChain(chain: any): { name: string; id: number }[
   processChain(chain);
   return evolutions;
 }
+
+// For backward compatibility
+export const getPokemonList = fetchPokemonList;
+export const getPokemonDetails = fetchPokemonDetails;
+export const getSpeciesDetails = fetchSpeciesDetails;
+export const getEvolutionChain = fetchEvolutionChain;

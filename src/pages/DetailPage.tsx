@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getPokemonDetails, getSpeciesDetails, getEvolutionChain, processEvolutionChain } from '@/services/pokemonService';
+import { usePokemonDetails, useSpeciesDetails, useEvolutionChain, processEvolutionChain } from '@/services/pokemonService';
 import Header from '@/components/Header';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorDisplay from '@/components/ErrorDisplay';
@@ -26,39 +24,27 @@ const DetailPage = () => {
   const numericId = parseInt(id || '0', 10);
   const isFav = isFavorite(numericId);
   
-  // Fetch Pokemon details
+  // Fetch Pokemon details using React Query hooks
   const { 
     data: pokemon, 
     isLoading: isLoadingPokemon, 
     error: pokemonError,
     refetch: refetchPokemon
-  } = useQuery({
-    queryKey: ['pokemon', id],
-    queryFn: () => getPokemonDetails(id || ''),
-    enabled: !!id,
-  });
+  } = usePokemonDetails(id || '');
   
   // Fetch species data when Pokemon data is available
   const {
     data: species,
     isLoading: isLoadingSpecies,
     error: speciesError
-  } = useQuery({
-    queryKey: ['species', pokemon?.speciesUrl],
-    queryFn: () => getSpeciesDetails(pokemon?.speciesUrl || ''),
-    enabled: !!pokemon?.speciesUrl,
-  });
+  } = useSpeciesDetails(pokemon?.speciesUrl);
   
   // Fetch evolution chain when species data is available
   const {
     data: evolutionData,
     isLoading: isLoadingEvolution,
     error: evolutionError
-  } = useQuery({
-    queryKey: ['evolution', species?.evolution_chain?.url],
-    queryFn: () => getEvolutionChain(species?.evolution_chain?.url || ''),
-    enabled: !!species?.evolution_chain?.url,
-  });
+  } = useEvolutionChain(species?.evolution_chain?.url);
   
   const isLoading = isLoadingPokemon || isLoadingSpecies || isLoadingEvolution;
   const error = pokemonError || speciesError || evolutionError;
