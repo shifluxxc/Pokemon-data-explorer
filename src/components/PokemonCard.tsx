@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { PokemonWithDetails } from "@/types/pokemon";
 import TypeBadge from './TypeBadge';
@@ -13,11 +13,23 @@ interface PokemonCardProps {
   enableComparison?: boolean;
 }
 
-const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, enableComparison = false }) => {
+const PokemonCard: React.FC<PokemonCardProps> = memo(({ pokemon, enableComparison = false }) => {
   const { toggleFavorite, isFavorite, toggleComparison, isInComparison } = usePokemonContext();
   
   const isFav = isFavorite(pokemon.id);
   const inComparison = isInComparison(pokemon.id);
+  
+  const handleFavoriteToggle = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(pokemon.id);
+  }, [toggleFavorite, pokemon.id]);
+  
+  const handleComparisonToggle = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleComparison(pokemon.id);
+  }, [toggleComparison, pokemon.id]);
   
   return (
     <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-gray-800 border-2 border-pokedex-mediumGray dark:border-gray-700 relative group">
@@ -26,11 +38,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, enableComparison = f
         variant="ghost"
         size="icon"
         className="absolute top-2 right-2 opacity-70 hover:opacity-100 z-10"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleFavorite(pokemon.id);
-        }}
+        onClick={handleFavoriteToggle}
       >
         <Heart 
           className={`h-5 w-5 transition-all ${isFav ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
@@ -62,11 +70,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, enableComparison = f
               variant={inComparison ? "default" : "outline"} 
               size="sm" 
               className="w-full mt-3"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleComparison(pokemon.id);
-              }}
+              onClick={handleComparisonToggle}
             >
               {inComparison ? "Remove from Compare" : "Add to Compare"}
             </Button>
@@ -75,6 +79,8 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, enableComparison = f
       </Link>
     </Card>
   );
-};
+});
+
+PokemonCard.displayName = 'PokemonCard';
 
 export default PokemonCard;

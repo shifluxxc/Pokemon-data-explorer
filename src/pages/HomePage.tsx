@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Header from '@/components/Header';
 import SearchBar from '@/components/SearchBar';
 import TypeFilterMulti from '@/components/TypeFilterMulti';
@@ -20,7 +20,7 @@ const HomePage = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
 
-  // Use custom hooks
+  // Use custom hooks with memoized dependencies
   const { 
     filteredPokemon, 
     isLoading, 
@@ -47,14 +47,14 @@ const HomePage = () => {
   
   const { showRandomPokemon } = useRandomPokemon(150, isLoading);
 
-  // Handle search input change
-  const handleSearchChange = (value: string) => {
+  // Handle search input change with useCallback
+  const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
     goToPage(1); // Reset to first page on search
-  };
+  }, [goToPage]);
   
-  // Handle type filter change
-  const handleTypeToggle = (type: string) => {
+  // Handle type filter change with useCallback
+  const handleTypeToggle = useCallback((type: string) => {
     setSelectedTypes(prev => {
       if (prev.includes(type)) {
         return prev.filter(t => t !== type);
@@ -63,45 +63,31 @@ const HomePage = () => {
       }
     });
     goToPage(1); // Reset to first page on filter change
-  };
+  }, [goToPage]);
   
-  // Handle sort change
-  const handleSortChange = (newSortBy: 'id' | 'name', newSortOrder: 'asc' | 'desc') => {
+  // Handle sort change with useCallback
+  const handleSortChange = useCallback((newSortBy: 'id' | 'name', newSortOrder: 'asc' | 'desc') => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
-  };
+  }, []);
   
-  // Clear all type filters
-  const clearTypeFilters = () => {
+  // Clear all type filters with useCallback
+  const clearTypeFilters = useCallback(() => {
     setSelectedTypes([]);
-  };
+  }, []);
 
-  if (isLoading) {
+  // Memoize the main content section to prevent unnecessary re-renders
+  const mainContent = useMemo(() => {
+    if (isLoading) {
+      return <LoadingSpinner />;
+    }
+
+    if (error) {
+      return <ErrorDisplay message={error instanceof Error ? error.message : 'Unknown error'} onRetry={refetch} />;
+    }
+
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
-        <main className="container py-6">
-          <LoadingSpinner />
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
-        <main className="container py-6">
-          <ErrorDisplay message={error instanceof Error ? error.message : 'Unknown error'} onRetry={refetch} />
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
-      <main className="container py-6">
+      <>
         <div className="flex flex-col md:flex-row gap-4 items-start justify-between mb-6">
           <div className="w-full md:w-1/3">
             <SearchBar searchTerm={searchTerm} onSearchChange={handleSearchChange} />
@@ -144,6 +130,21 @@ const HomePage = () => {
             enableComparison={true}
           />
         </div>
+      </>
+    );
+  }, [
+    isLoading, error, refetch, searchTerm, selectedTypes, allTypes, 
+    sortBy, sortOrder, filteredPokemon, paginatedPokemon, 
+    currentPage, totalPages, goToPage, pageNumbers,
+    handleSearchChange, handleTypeToggle, handleSortChange,
+    clearTypeFilters, showRandomPokemon
+  ]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header />
+      <main className="container py-6">
+        {mainContent}
       </main>
       <footer className="bg-pokedex-darkGray dark:bg-gray-800 text-white text-center py-4 mt-8 transition-colors duration-300">
         <p className="text-sm">Powered by PokéAPI - Data for the first 150 Pokémon</p>

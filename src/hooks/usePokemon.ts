@@ -1,5 +1,8 @@
+
+import { useQuery } from '@tanstack/react-query';
 import { useAllPokemon } from '@/services/pokemonService';
-import { useMemo } from 'react';
+import { PokemonWithDetails } from '@/types/pokemon';
+import { useMemo, useCallback } from 'react';
 
 interface UsePokemonOptions {
   sortBy: 'id' | 'name';
@@ -23,39 +26,47 @@ export const usePokemon = ({
     refetch 
   } = useAllPokemon(150);
   
-  // Filter and sort Pokémon
-  const filteredPokemon = useMemo(() => {
-    let filtered = [...allPokemon];
+  // Memoized filter function to avoid recreating on every render
+  const filterPokemon = useCallback((pokemon: PokemonWithDetails[], search: string, types: string[]) => {
+    let filtered = [...pokemon];
     
     // Filter by search term
-    if (searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase();
+    if (search.trim() !== '') {
+      const searchLower = search.toLowerCase();
       filtered = filtered.filter(pokemon => 
         pokemon.name.toLowerCase().includes(searchLower) || 
-        pokemon.id.toString() === searchTerm
+        pokemon.id.toString() === search
       );
     }
     
     // Filter by selected types (AND logic - must have ALL selected types)
-    if (selectedTypes.length > 0) {
+    if (types.length > 0) {
       filtered = filtered.filter(pokemon => 
-        selectedTypes.every(type => pokemon.types.includes(type))
+        types.every(type => pokemon.types.includes(type))
       );
     }
     
-    // Sort results
-    filtered.sort((a, b) => {
-      if (sortBy === 'id') {
-        return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+    return filtered;
+  }, []);
+  
+  // Memoized sort function
+  const sortPokemon = useCallback((pokemon: PokemonWithDetails[], by: string, order: string) => {
+    return [...pokemon].sort((a, b) => {
+      if (by === 'id') {
+        return order === 'asc' ? a.id - b.id : b.id - a.id;
       } else { // sortBy === 'name'
-        return sortOrder === 'asc' 
+        return order === 'asc' 
           ? a.name.localeCompare(b.name) 
           : b.name.localeCompare(a.name);
       }
     });
-    
-    return filtered;
-  }, [allPokemon, searchTerm, selectedTypes, sortBy, sortOrder]);
+  }, []);
+  
+  // Filter and sort Pokémon
+  const filteredPokemon = useMemo(() => {
+    const filtered = filterPokemon(allPokemon, searchTerm, selectedTypes);
+    return sortPokemon(filtered, sortBy, sortOrder);
+  }, [allPokemon, searchTerm, selectedTypes, sortBy, sortOrder, filterPokemon, sortPokemon]);
   
   // Extract all types from the Pokémon data
   const allTypes = useMemo(() => {
