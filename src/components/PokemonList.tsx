@@ -2,12 +2,33 @@
 import React from 'react';
 import { PokemonWithDetails } from "@/types/pokemon";
 import PokemonCard from './PokemonCard';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface PokemonListProps {
   pokemonList: PokemonWithDetails[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  pageNumbers: number[];
+  enableComparison?: boolean;
 }
 
-const PokemonList: React.FC<PokemonListProps> = ({ pokemonList }) => {
+const PokemonList: React.FC<PokemonListProps> = ({ 
+  pokemonList, 
+  currentPage, 
+  totalPages,
+  onPageChange,
+  pageNumbers,
+  enableComparison = false
+}) => {
   if (pokemonList.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -23,10 +44,52 @@ const PokemonList: React.FC<PokemonListProps> = ({ pokemonList }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
-      {pokemonList.map((pokemon) => (
-        <PokemonCard key={pokemon.id} pokemon={pokemon} />
-      ))}
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+        {pokemonList.map((pokemon) => (
+          <PokemonCard 
+            key={pokemon.id} 
+            pokemon={pokemon} 
+            enableComparison={enableComparison}
+          />
+        ))}
+      </div>
+      
+      {totalPages > 1 && (
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => onPageChange(currentPage - 1)}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+            
+            {pageNumbers.map((pageNumber, index) => (
+              <PaginationItem key={`${pageNumber}-${index}`}>
+                {pageNumber < 0 ? (
+                  <PaginationEllipsis />
+                ) : (
+                  <PaginationLink
+                    isActive={pageNumber === currentPage}
+                    onClick={() => onPageChange(pageNumber)}
+                    className="cursor-pointer"
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                )}
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => onPageChange(currentPage + 1)}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };

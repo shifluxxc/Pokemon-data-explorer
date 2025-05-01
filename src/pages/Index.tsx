@@ -9,6 +9,7 @@ import ErrorDisplay from '@/components/ErrorDisplay';
 import { PokemonWithDetails } from '@/types/pokemon';
 import { getPokemonList, getAllPokemonTypes } from '@/services/pokemonService';
 import { useToast } from "@/components/ui/use-toast";
+import { usePagination } from '@/hooks/usePagination';
 
 const Index = () => {
   const [allPokemon, setAllPokemon] = useState<PokemonWithDetails[]>([]);
@@ -19,6 +20,18 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Add pagination for filtered Pokémon
+  const {
+    currentPage,
+    totalPages,
+    currentData: paginatedPokemon,
+    goToPage,
+    pageNumbers
+  } = usePagination({
+    data: filteredPokemon,
+    itemsPerPage: 12
+  });
 
   // Function to fetch all Pokémon
   const fetchPokemonData = async () => {
@@ -86,11 +99,13 @@ const Index = () => {
   // Handle search input change
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
+    goToPage(1); // Reset to first page on search
   };
   
   // Handle type filter change
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
+    goToPage(1); // Reset to first page on filter change
   };
 
   if (loading) {
@@ -134,7 +149,13 @@ const Index = () => {
               {filteredPokemon.length} Pokémon Found
             </h2>
           </div>
-          <PokemonList pokemonList={filteredPokemon} />
+          <PokemonList 
+            pokemonList={paginatedPokemon}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            pageNumbers={pageNumbers}
+          />
         </div>
       </main>
       <footer className="bg-pokedex-darkGray dark:bg-gray-800 text-white text-center py-4 mt-8 transition-colors duration-300">

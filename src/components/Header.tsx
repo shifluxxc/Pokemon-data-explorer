@@ -1,18 +1,55 @@
 
 import React from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { Link, useLocation } from 'react-router-dom';
+import { usePokemonContext } from '@/contexts/PokemonContext';
+import { Heart } from 'lucide-react';
+import { Button } from './ui/button';
 
 const Header: React.FC = () => {
+  const { comparisonList } = usePokemonContext();
+  const location = useLocation();
+  
   return (
-    <header className="sticky top-0 z-10 bg-pokedex-red dark:bg-gray-800 py-4 shadow-md transition-colors duration-300">
-      <div className="container flex items-center justify-center">
-        <h1 className="text-2xl md:text-4xl font-bold text-white tracking-wider">Pokédex</h1>
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-4">
+    <header className="bg-pokedex-red dark:bg-gray-800 text-white shadow-md transition-colors duration-300">
+      <div className="container py-4 flex flex-col sm:flex-row justify-between items-center">
+        <Link to="/" className="text-2xl font-bold">Pokédex</Link>
+        
+        <nav className="flex items-center gap-4 mt-4 sm:mt-0">
+          <Button 
+            variant={location.pathname === '/' ? 'secondary' : 'ghost'}
+            size="sm"
+            asChild
+          >
+            <Link to="/">Home</Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === '/favorites' ? 'secondary' : 'ghost'}
+            size="sm"
+            asChild
+            className="gap-2"
+          >
+            <Link to="/favorites">
+              <Heart className="h-4 w-4" />
+              Favorites
+            </Link>
+          </Button>
+          
+          {comparisonList.length > 0 && (
+            <Button 
+              variant={location.pathname === '/compare' ? 'secondary' : 'ghost'}
+              size="sm"
+              asChild
+            >
+              <Link to="/compare">
+                Compare ({comparisonList.length}/2)
+              </Link>
+            </Button>
+          )}
+          
           <ThemeToggle />
-          <div className="bg-white dark:bg-gray-600 rounded-full w-10 h-10 border-4 border-pokedex-darkGray flex items-center justify-center">
-            <div className="bg-pokedex-lightGray dark:bg-gray-400 rounded-full w-6 h-6 animate-pulse"></div>
-          </div>
-        </div>
+        </nav>
       </div>
     </header>
   );
